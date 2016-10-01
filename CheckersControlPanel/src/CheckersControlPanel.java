@@ -1,6 +1,3 @@
-import ia.Engine;
-import ia.Engine.Level;
-import ia.Engine.Strategy;
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Font;
@@ -13,7 +10,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -21,7 +17,9 @@ import javax.swing.JSplitPane;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.videoio.VideoCapture;
-
+import ai.Engine;
+import ai.Engine.Level;
+import ai.Engine.Strategy;
 import checkers.Chessboard;
 import checkers.Sequence;
 import checkers.Status;

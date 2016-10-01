@@ -1,4 +1,4 @@
-package ia;
+package ai;
 
 import java.util.List;
 
