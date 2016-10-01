@@ -18,10 +18,10 @@ The whole project is written in Java. The checkers engine implements the MiniMax
 https://www.youtube.com/watch?v=rRNOXEZBs28
 
 ### Picture
-https://plus.google.com/1046265334274...
+https://plus.google.com/photos/photo/104626533427419398246/6207104140331136786
 
 ### Design
-https://plus.google.com/photos/104626...
+https://plus.google.com/photos/104626533427419398246/album/6260873768281079857
 
 ### Building Instructions
-https://drive.google.com/file/d/0B9II...
+https://drive.google.com/open?id=0B9II24hvksAKd0dfSUo4a0lXd2s
