@@ -15,7 +15,7 @@ The movements of the human player are captured by a webcam fixed on one of the f
 The whole project is written in Java. The checkers engine implements the MiniMax algorithm with alpha-beta pruning and the quiescent search. The code that analyzes the images makes use of OpenCV library.
 
 ### Screenshot
-<img src="screenshot/ev3_checkers_robot.png?raw=true" width="500"/>
+<img src="screenshot/ev3_checkers_robot.png?raw=true" width="600"/>
 
 ### Video
 https://www.youtube.com/watch?v=rRNOXEZBs28
