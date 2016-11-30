@@ -216,7 +216,7 @@ public class CheckersControlPanel extends JFrame {
 
 					resetGUI();
 					connect();
-
+					
 				} catch (Exception e) {
 					mLog.print("Failure Error establishing connection with EV3:" + e.getMessage());
 				}
@@ -250,7 +250,7 @@ public class CheckersControlPanel extends JFrame {
 			BoardDetector detector = new BoardDetector();
 			Chessboard chessboard = null;
 			Mat mat = new Mat();
-			boolean repeat = false;
+			boolean repeat = true;
 
 			mVideo.open(0);
 
@@ -259,12 +259,12 @@ public class CheckersControlPanel extends JFrame {
 				try {
 
 					mVideo.read(mat);
-
 					chessboard = detector.calibrate(mat);
-
+					repeat = false;
+					
 				} catch (Exception ex) {
 
-					repeat = true;
+					
 
 					mLog.print(ex.getMessage());
 
