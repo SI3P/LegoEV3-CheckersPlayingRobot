@@ -2,7 +2,7 @@ package detection;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -148,9 +148,8 @@ public class BoardDetector {
 			}
 		}
 
-		// Imgcodecs.imwrite("chessboard_pawns_"+(white?"white":"red") + ".jpg",
-		// chessboardHalf);
-
+		// Imgcodecs.imwrite("chessboard_pawns_"+(white?"white":"red") +
+		// ".jpg",chessboardHalf);
 		chessboardHalf.release();
 		chessboardHSV.release();
 		circles.release();
@@ -188,8 +187,8 @@ public class BoardDetector {
 		Core.inRange(chessboardMatHSV, lower, upper, chessboardPawns);
 		Imgproc.morphologyEx(chessboardPawns, chessboardPawns, Imgproc.MORPH_OPEN,
 				Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5, 5)));
-		// Imgcodecs.imwrite("chessboard_negative"+(white?"white":"red") +
-		// ".jpg", chessboardPawns);
+		// Imgcodecs.imwrite("chessboard_negative"+(white?"white":"red")
+		// +".jpg", chessboardPawns);
 
 		size = chessboardPawns.size();
 		cellHeight = size.height / Chessboard.HEIGHT;
@@ -210,7 +209,6 @@ public class BoardDetector {
 
 				Imgproc.approxPolyDP(new MatOfPoint2f(shape.toArray()), cell2f, 2, true);
 				rect = Imgproc.minAreaRect(cell2f);
-
 				center = rect.center;
 				i = (int) Math.floor(center.y / cellHeight);
 				j = (int) Math.floor(center.x / cellWidth);
@@ -224,39 +222,23 @@ public class BoardDetector {
 	private Mat analyze(Mat mat) {
 
 		Mat outerBox;
-		Mat chessboard = new Mat(), chessboardMatGrey = new Mat();
-		Mat lines;
-		final Mat kernel;
-		final byte[] data = { 0, 1, 0, 1, 1, 1, 0, 1, 0 };
-		double[][] exLines;
-		Point[] points;
+		List<Point> points;
+		Mat chessboard, chessboardMatGrey;
 
+		chessboard = new Mat();
 		Core.flip(mat.t(), chessboard, 0);
 		// Imgcodecs.imwrite("chessboard_captured.jpg", chessboard);
+		chessboardMatGrey = new Mat();
 		Imgproc.cvtColor(chessboard, chessboardMatGrey, Imgproc.COLOR_BGRA2GRAY);
 		Imgproc.GaussianBlur(chessboardMatGrey, chessboardMatGrey, new Size(11, 11), 0);
-
 		outerBox = new Mat(chessboard.size(), CvType.CV_8UC1);
-		Imgproc.adaptiveThreshold(chessboardMatGrey, outerBox, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C,
-				Imgproc.THRESH_BINARY, 5, 2);
+		Imgproc.adaptiveThreshold(chessboardMatGrey, outerBox, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
+				Imgproc.THRESH_BINARY_INV, 5, 2);
 		chessboardMatGrey.release();
-		Core.bitwise_not(outerBox, outerBox);
-
-		kernel = new Mat(3, 3, CvType.CV_8U);
-		kernel.put(0, 0, data);
-		Imgproc.dilate(outerBox, outerBox, kernel);
-
-		outerBox = findMaxBlob(outerBox);
-		Imgproc.erode(outerBox, outerBox, kernel);
-		kernel.release();
-
-		lines = findLines(outerBox);
-		lines = mergeLines(chessboard.size(), lines);
-		exLines = findExtremeLines(lines);
-
-		lines.release();
-		points = calculateIntersect(exLines, outerBox.size());
+		points = findContour(outerBox);
+		Collections.sort(points, new ClockWiseComparator(points));
 		outerBox = correctPerspective(chessboard, points);
+		//Imgcodecs.imwrite("outerBox .jpg", outerBox);
 		chessboard.release();
 
 		mBoard = ImageUtils.mat2BufferedImage(outerBox);
@@ -264,305 +246,50 @@ public class BoardDetector {
 		return outerBox;
 	}
 
-	private Mat findMaxBlob(Mat outerBox) {
+	private List<Point> findContour(Mat src) {
 
-		double[] pixels;
-		double max = -1;
-		int area;
-		Point maxPt = null;
-		Mat mask;
+		List<Point> points = null;
+		MatOfPoint contour;
+		List<MatOfPoint> contours;
+		double area, maxim = 0;
+		MatOfPoint2f approx, curve;
 
-		mask = Mat.zeros(outerBox.rows() + 2, outerBox.cols() + 2, CvType.CV_8U);
+		contours = new ArrayList<>();
+		Imgproc.findContours(src, contours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
 
-		for (int y = 0; y < outerBox.size().height; y++) {
+		if (contours.size() > 0) {
 
-			for (int x = 0; x < outerBox.size().width; x++) {
+			for (int contourIdx = 0; contourIdx < contours.size(); contourIdx++) {
 
-				pixels = outerBox.get(y, x);
+				contour = contours.get(contourIdx);
+				area = Imgproc.contourArea(contour);
+				approx = new MatOfPoint2f();
+				curve = new MatOfPoint2f(contour.toArray());
+				Imgproc.approxPolyDP(curve, approx, Imgproc.arcLength(curve, true) * 0.02, true);
 
-				if (pixels[0] >= 128) {
+				if (approx.total() == 4 && maxim < area) {
 
-					area = Imgproc.floodFill(outerBox, mask, new Point(x, y), new Scalar(164, 164, 164));
-
-					if (area > max) {
-
-						maxPt = new Point(x, y);
-						max = area;
-					}
+					maxim = area;
+					points = approx.toList();
 				}
 			}
 		}
 
-		mask.release();
-		mask = Mat.zeros(outerBox.rows() + 2, outerBox.cols() + 2, CvType.CV_8U);
-		Imgproc.floodFill(outerBox, mask, maxPt, new Scalar(255, 255, 255));
-
-		mask.release();
-		mask = Mat.zeros(outerBox.rows() + 2, outerBox.cols() + 2, CvType.CV_8U);
-
-		for (int y = 0; y < outerBox.size().height; y++) {
-
-			for (int x = 0; x < outerBox.size().width; x++) {
-
-				pixels = outerBox.get(y, x);
-
-				if (pixels[0] == 164 && x != maxPt.x && y != maxPt.y)
-					Imgproc.floodFill(outerBox, mask, new Point(x, y), new Scalar(0, 0, 0));
-			}
-		}
-
-		mask.release();
-
-		return outerBox;
+		return points;
 	}
 
-	private Mat findLines(Mat outerBox) {
-
-		Mat lines = new Mat();
-
-		Imgproc.HoughLines(outerBox, lines, 1, Math.PI / 180, 200);
-
-		return lines;
-	}
-
-	private Mat mergeLines(Size size, Mat lines) {
-
-		double[] data1, data2;
-		double rho1, theta1, rho2, theta2;
-		Point ptA1, ptB1, ptA2, ptB2;
-
-		for (int x = 0; x < lines.rows(); x++) {
-
-			data1 = lines.get(x, 0);
-			rho1 = data1[0];
-			theta1 = data1[1];
-
-			if (rho1 == 0 && theta1 == -100)
-				continue;
-
-			ptA1 = new Point();
-			ptB1 = new Point();
-
-			if (theta1 > Math.PI * 45 / 180 && theta1 < Math.PI * 135 / 180) {
-
-				ptA1.x = 0;
-				ptA1.y = rho1 / Math.sin(theta1);
-				ptB1.x = size.width;
-				ptB1.y = -ptB1.x / Math.tan(theta1) + rho1 / Math.sin(theta1);
-			} else {
-
-				ptA1.y = 0;
-				ptA1.x = rho1 / Math.cos(theta1);
-				ptB1.y = size.height;
-				ptB1.x = -ptB1.y / Math.tan(theta1) + rho1 / Math.cos(theta1);
-			}
-
-			for (int y = 0; y < lines.rows(); y++) {
-
-				if (x != y) {
-
-					data2 = lines.get(y, 0);
-					rho2 = data2[0];
-					theta2 = data2[1];
-
-					if (Math.abs(rho2 - rho1) < 20 && Math.abs(theta2 - theta1) < Math.PI * 10 / 180) {
-
-						ptA2 = new Point();
-						ptB2 = new Point();
-
-						if (theta2 > Math.PI * 45 / 180 && theta2 < Math.PI * 135 / 180) {
-
-							ptA2.x = 0;
-							ptA2.y = rho2 / Math.sin(theta2);
-							ptB2.x = size.width;
-							ptB2.y = -ptB2.x / Math.tan(theta2) + rho2 / Math.sin(theta2);
-						} else {
-
-							ptA2.y = 0;
-							ptA2.x = rho2 / Math.cos(theta2);
-							ptB2.y = size.height;
-							ptB2.x = -ptB2.y / Math.tan(theta2) + rho2 / Math.cos(theta2);
-						}
-
-						if (((double) (ptA2.x - ptA1.x) * (ptA2.x - ptA1.x) + (ptA2.y - ptA1.y) * (ptA2.y - ptA1.y) < 64
-								* 64)
-								&& ((double) (ptB2.x - ptB1.x) * (ptB2.x - ptB1.x)
-										+ (ptB2.y - ptB1.y) * (ptB2.y - ptB1.y) < 64 * 64)) {
-
-							lines.put(x, 0, new double[] { (rho1 + rho2) / 2, (theta1 + theta2) / 2 });
-							lines.put(y, 0, new double[] { 0, -100 });
-						}
-					}
-				}
-			}
-		}
-
-		return lines;
-	}
-
-	private double[][] findExtremeLines(Mat lines) {
-
-		double[][] exLines;
-		double[] topLine, bottomLine, leftLine, rightLine;
-		double[] data;
-		double lIntercept = 100000, rIntercept = 0, xIntercept;
-		double rho, theta;
-
-		topLine = new double[] { 1000, 1000 };
-		bottomLine = new double[] { -1000, -1000 };
-		leftLine = new double[] { 1000, 1000 };
-		rightLine = new double[] { -1000, -1000 };
-
-		for (int x = 0; x < lines.rows(); x++) {
-
-			data = lines.get(x, 0);
-			rho = data[0];
-			theta = data[1];
-
-			if (rho == 0 && theta == -100)
-				continue;
-
-			xIntercept = rho / Math.cos(theta);
-
-			if (theta > Math.PI * 80 / 180 && theta < Math.PI * 100 / 180) {
-
-				if (rho < topLine[0])
-					topLine = data;
-
-				if (rho > bottomLine[0])
-					bottomLine = data;
-			}
-
-			else if (theta < Math.PI * 10 / 180 || theta > Math.PI * 170 / 180) {
-
-				if (xIntercept > rIntercept) {
-
-					rightLine = data;
-					rIntercept = xIntercept;
-
-				} else if (xIntercept <= lIntercept) {
-
-					leftLine = data;
-					lIntercept = xIntercept;
-				}
-			}
-		}
-
-		exLines = new double[4][];
-		exLines[0] = topLine;
-		exLines[1] = bottomLine;
-		exLines[2] = leftLine;
-		exLines[3] = rightLine;
-
-		return exLines;
-	}
-
-	private Point[] calculateIntersect(double[][] exLines, Size size) {
-
-		Point ptTopLeft, ptTopRight, ptBottomRight, ptBottomLeft;
-		Point left1, left2, right1, right2, bottom1, bottom2, top1, top2;
-		double topA, topB, topC;
-		double bottomA, bottomB, bottomC;
-		double leftA, leftB, leftC;
-		double rightA, rightB, rightC;
-		double topLeft, topRight, bottomRight, bottomLeft;
-		double[] topLine, bottomLine, leftLine, rightLine;
-		final double height = size.height;
-		final double width = size.width;
-
-		topLine = exLines[0];
-		bottomLine = exLines[1];
-		leftLine = exLines[2];
-		rightLine = exLines[3];
-		left1 = new Point();
-		left2 = new Point();
-
-		if (leftLine[1] != 0) {
-
-			left1.x = 0;
-			left1.y = leftLine[0] / Math.sin(leftLine[1]);
-			left2.x = width;
-			left2.y = -left2.x / Math.tan(leftLine[1]) + left1.y;
-
-		} else {
-
-			left1.y = 0;
-			left1.x = leftLine[0] / Math.cos(leftLine[1]);
-			left2.y = height;
-			left2.x = left1.x - height * Math.tan(leftLine[1]);
-		}
-
-		leftA = left2.y - left1.y;
-		leftB = left1.x - left2.x;
-		leftC = leftA * left1.x + leftB * left1.y;
-		right1 = new Point();
-		right2 = new Point();
-
-		if (rightLine[1] != 0) {
-
-			right1.x = 0;
-			right1.y = rightLine[0] / Math.sin(rightLine[1]);
-			right2.x = width;
-			right2.y = -right2.x / Math.tan(rightLine[1]) + right1.y;
-
-		} else {
-
-			right1.y = 0;
-			right1.x = rightLine[0] / Math.cos(rightLine[1]);
-			right2.y = height;
-			right2.x = right1.x - height * Math.tan(rightLine[1]);
-		}
-
-		rightA = right2.y - right1.y;
-		rightB = right1.x - right2.x;
-		rightC = rightA * right1.x + rightB * right1.y;
-		bottom1 = new Point();
-		bottom2 = new Point();
-		bottom1.x = 0;
-		bottom1.y = bottomLine[0] / Math.sin(bottomLine[1]);
-		bottom2.x = width;
-		bottom2.y = -bottom2.x / Math.tan(bottomLine[1]) + bottom1.y;
-		bottomA = bottom2.y - bottom1.y;
-		bottomB = bottom1.x - bottom2.x;
-		bottomC = bottomA * bottom1.x + bottomB * bottom1.y;
-		top1 = new Point();
-		top2 = new Point();
-		top1.x = 0;
-		top1.y = topLine[0] / Math.sin(topLine[1]);
-		top2.x = width;
-		top2.y = -top2.x / Math.tan(topLine[1]) + top1.y;
-		topA = top2.y - top1.y;
-		topB = top1.x - top2.x;
-		topC = topA * top1.x + topB * top1.y;
-
-		topLeft = leftA * topB - leftB * topA;
-		ptTopLeft = new Point((topB * leftC - leftB * topC) / topLeft, (leftA * topC - topA * leftC) / topLeft);
-
-		topRight = rightA * topB - rightB * topA;
-		ptTopRight = new Point((topB * rightC - rightB * topC) / topRight, (rightA * topC - topA * rightC) / topRight);
-
-		bottomRight = rightA * bottomB - rightB * bottomA;
-		ptBottomRight = new Point((bottomB * rightC - rightB * bottomC) / bottomRight,
-				(rightA * bottomC - bottomA * rightC) / bottomRight);
-
-		bottomLeft = leftA * bottomB - leftB * bottomA;
-		ptBottomLeft = new Point((bottomB * leftC - leftB * bottomC) / bottomLeft,
-				(leftA * bottomC - bottomA * leftC) / bottomLeft);
-
-		return new Point[] { ptTopLeft, ptTopRight, ptBottomRight, ptBottomLeft };
-	}
-
-	private Mat correctPerspective(Mat mat, Point[] ptsSrc) {
+	private Mat correctPerspective(Mat mat, List<Point> ptsSrc) {
 
 		Mat undistorted;
 		Mat src, dst;
 		Point ptTopLeft, ptTopRight, ptBottomRight, ptBottomLeft;
 		double side, maxArea, area;
-
-		ptTopLeft = ptsSrc[0];
-		ptTopRight = ptsSrc[1];
-		ptBottomRight = ptsSrc[2];
-		ptBottomLeft = ptsSrc[3];
+		List<Point> ptsDst;
+		
+		ptTopLeft = ptsSrc.get(0);
+		ptBottomLeft = ptsSrc.get(1);
+		ptBottomRight = ptsSrc.get(2);
+		ptTopRight = ptsSrc.get(3);
 
 		maxArea = Math.pow((ptBottomLeft.x - ptBottomRight.x), 2) + Math.pow((ptBottomLeft.y - ptBottomRight.y), 2);
 		area = Math.pow((ptTopRight.x - ptBottomRight.x), 2) + Math.pow((ptTopRight.y - ptBottomRight.y), 2);
@@ -582,22 +309,16 @@ public class BoardDetector {
 
 		side = Math.sqrt((double) maxArea);
 		undistorted = new Mat(new Size(side, side), CvType.CV_8UC1);
-
-		List<Point> ptsDst = new ArrayList<Point>();
+		ptsDst = new ArrayList<Point>();
 		ptsDst.add(new Point(0, 0));
-		ptsDst.add(new Point(side - 1, 0));
-		ptsDst.add(new Point(side - 1, side - 1));
 		ptsDst.add(new Point(0, side - 1));
-
-		src = Converters.vector_Point2f_to_Mat(Arrays.asList(ptsSrc));
+		ptsDst.add(new Point(side - 1, side - 1));
+		ptsDst.add(new Point(side - 1, 0));
+		src = Converters.vector_Point2f_to_Mat(ptsSrc);
 		dst = Converters.vector_Point2f_to_Mat(ptsDst);
-
 		Imgproc.warpPerspective(mat, undistorted, Imgproc.getPerspectiveTransform(src, dst), new Size(side, side));
-
 		src.release();
 		dst.release();
-
-		// Imgcodecs.imwrite("chessboard_warped.jpg", undistorted);
 
 		return undistorted;
 	}
