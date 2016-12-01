@@ -149,19 +149,19 @@ chessboardHalf = warped.submat(new Rect(0, white ? h : 0, w, h));
 Transform the image from BGR to HSV color space.
 ```java
 chessboardHSV = new Mat();
-Imgproc.cvtColor(chessboardHalf , chessboardHSV , Imgproc.COLOR_BGR2HSV);
+Imgproc.cvtColor(chessboardHalf, chessboardHSV, Imgproc.COLOR_BGR2HSV);
 ```
 <img src="screenshot/chessboardHalfHSV.jpg" width="100"/>
 
 Transform the image from BGR to Grayscale format.
 ```java
-Imgproc.cvtColor(chessboardHalf , chessboardGrey , Imgproc.COLOR_BGR2GRAY);
+Imgproc.cvtColor(chessboardHalf, chessboardGrey, Imgproc.COLOR_BGR2GRAY);
 ```
 <img src="screenshot/chessboardHalfGrey.jpg" width="100"/>
 
 Smooth the grayscale image to remove noise.
 ```java
-Imgproc.medianBlur( chessboardGrey ,  chessboardGrey  , 5);
+Imgproc.medianBlur(chessboardGrey, chessboardGrey, 5);
 ```
 <img src="screenshot/chessboardHalfBlur.jpg" width="100"/>
 
@@ -169,7 +169,7 @@ Imgproc.medianBlur( chessboardGrey ,  chessboardGrey  , 5);
 Finds circles in a grayscale image.
 ```java
 circles = new Mat();
-Imgproc.HoughCircles(chessboardGrey , circles, Imgproc.CV_HOUGH_GRADIENT, 2, chessboardGrey.height() / 4, 50, 30,25, 30);
+Imgproc.HoughCircles(chessboardGrey, circles, Imgproc.CV_HOUGH_GRADIENT, 2, chessboardGrey.height() / 4, 50, 30,25, 30);
 ```
 
 For each circle, get the center point and radius; starting from the center, extract the color from the HSV space using 8 points (0° ,45° ,90° ,135° ,180° ,225° ,270° ,315° ) on different concentric circumferences. The colors are compared to determine the recognition range [min,max].
@@ -185,7 +185,7 @@ for (int i = 0; i < circles.cols(); i++) {
 			rad = Math.toRadians(z);
 			x = cx + Math.cos(rad) * r;
 			y = cy + Math.sin(rad) * r;
-			hsv = chessboardHSV.get((int) y, (int) x);
+			hsv = chessboardHSV.get((int) y,(int) x);
 			
 			if (hsv == null)
 				continue;
@@ -217,13 +217,13 @@ Core.inRange(chessboardHSV, lower, upper, chessboardPawns);
 
 Erosion + dilation to remove noise.
 ```java
-Imgproc.morphologyEx(chessboardPawns, chessboardPawns, Imgproc.MORPH_OPEN,Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5,5)));
+Imgproc.morphologyEx(chessboardPawns, chessboardPawns, Imgproc.MORPH_OPEN, Imgproc.getStructuringElement(Imgproc.MORPH_RECT,new Size(5,5)));
 ```
 <img src="screenshot/chessboardMph.jpg" width="100"/>
 
 Find the contours of the pawns.
 ```java
-Imgproc.findContours(chessboardPawns, shapes, new Mat(),Imgproc.RETR_EXTERNAL,Imgproc.CHAIN_APPROX_SIMPLE,new Point(0, 0));
+Imgproc.findContours(chessboardPawns, shapes, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE, new Point(0, 0));
 ```
 
 Cycles through the contours, converting each one to a polygon. If the area of the polygon is sufficiently large, get the center and determines the positions on the chessboard.
