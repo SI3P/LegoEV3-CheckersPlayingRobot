@@ -44,27 +44,27 @@ video.release();                          // Release resources.
 ### ChessBoard detection
 
 #### Preprocessing
-Rotate the image by 90 degrees.
+Rotate the image by 90 degrees:
 ```java
 Mat chessboard = new Mat();
 Core.flip(mat.t(), chessboard, 0);
 ```
 <img src="screenshot/chessboard.jpg" width="100"/>
 
-Transform the image from BGR to Grayscale format.
+Transform the image from BGR to Grayscale format:
 ```java
 Mat chessboardGrey = new Mat();
 Imgproc.cvtColor(chessboard, chessboardGrey, Imgproc.COLOR_BGRA2GRAY);
 ```
 <img src="screenshot/chessboardGrey.jpg" width="100"/>
 
-Smooth the image with Gaussian Filter to remove noise.
+Smooth the image with Gaussian Filter to remove noise:
 ```java
 Imgproc.GaussianBlur(chessboardGrey, chessboardGrey, new Size(11, 11), 0);
 ```
 <img src="screenshot/chessboardBlur.jpg" width="100"/>
 
-Adaptive (illumination-independent) threshold. The result is a binary image with a white grid.
+Adaptive (illumination-independent) threshold. The result is a binary image with a white grid:
 ```java
 Mat chessboardBin = new Mat();
 Imgproc.adaptiveThreshold(chessboardGrey, chessboardBin, 255,Imgproc.ADAPTIVE_THRESH_MEAN_C,Imgproc.THRESH_BINARY, 5, 2);
@@ -72,13 +72,13 @@ Imgproc.adaptiveThreshold(chessboardGrey, chessboardBin, 255,Imgproc.ADAPTIVE_TH
 <img src="screenshot/chessboardBin.jpg" width="100"/>
 
 #### Blob detection
-Find all contours in the binary image.
+Find all contours in the binary image:
 ```java
 contours = new ArrayList<MatOfPoint>();
 Imgproc.findContours(chessboardBin, contours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
 ```
 
-Cycles through the contours, converting each one to a polygon. If the polygon has four corners, and is bigger than the previous biggest one, then save the four points.
+Cycles through the contours, converting each one to a polygon. If the polygon has four corners, and is bigger than the previous biggest one, then save the four points:
 ```java
 for (int i = 0; i < contours.size(); i++) {
 	contour = contours.get(i);
@@ -95,13 +95,13 @@ for (int i = 0; i < contours.size(); i++) {
 <img src="screenshot/chessboardPts.jpg" width="100"/>
 
 #### Image warping
-Sort four points in clockwise order.
+Sort four points in clockwise order:
 ```java
 Collections.sort(points, new ClockWiseComparator(points));
 ```
-<img src="screenshot/chessboardSort.png" width="100"/>
+<img src="screenshot/chessboardSort.png" width="150"/>
 
-Find the longest edge of the chessboard.
+Find the longest edge of the chessboard:
 ```java
 ptTopLeft = points.get(0);
 ptBottomLeft = points.get(1);
@@ -119,13 +119,13 @@ maxArea = Math.max(
 		);
 ```
 
-Create a new square image.
+Create a new square image:
 ```java
 double side = Math.sqrt((double) maxArea);			// length of the longest edge
 Mat warped = new Mat(new Size(side, side), CvType.CV_8UC1);	// new square image
 ```
 
-Correct perspective of the chessboard.
+Correct perspective of the chessboard:
 ```java
 destinations = new ArrayList<Point>();
 destinations.add(new Point(0, 0));
@@ -134,4 +134,33 @@ destinations.add(new Point(side - 1, side - 1));
 destinations.add(new Point(side - 1, 0));
 Imgproc.warpPerspective(chessboard, warped, Imgproc.getPerspectiveTransform(Converters.vector_Point2f_to_Mat(points),Converters.vector_Point2f_to_Mat(destinations)),new Size(side, side));
 ```
-<img src="screenshot/chessboardWarp.png" width="100"/>
+<img src="screenshot/chessboardWarp.jpg" width="100"/>
+
+### Color calibration
+#### Preprocessing
+Cut the image in half:
+```java
+h = warped.height() / 2;
+w = warped.width();
+chessboardHalf = warped.submat(new Rect(0, white ? h : 0, w, h));
+```
+<img src="screenshot/chessboardHalf.jpg" width="100"/>
+
+Transform the image from BGR to HSV color space:
+```java
+chessboardHSV = new Mat();
+Imgproc.cvtColor(chessboardHalf , chessboardHSV , Imgproc.COLOR_BGR2HSV);
+```
+<img src="screenshot/chessboardHalfHSV.jpg" width="100"/>
+
+Transform the image from BGR to Grayscale format
+```java
+Imgproc.cvtColor(chessboardHalf , chessboardGrey , Imgproc.COLOR_BGR2GRAY);
+```
+<img src="screenshot/chessboardHalfGrey.jpg" width="100"/>
+
+Smooth the grayscale image to remove noise
+```java
+Imgproc.medianBlur( chessboardGrey ,  chessboardGrey  , 5);
+```
+<img src="screenshot/chessboardHalfBlur.jpg" width="100"/>
