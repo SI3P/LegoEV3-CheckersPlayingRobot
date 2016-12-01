@@ -166,7 +166,7 @@ Imgproc.medianBlur(chessboardGrey, chessboardGrey, 5);
 <img src="screenshot/chessboardHalfBlur.jpg" width="100"/>
 
 #### Color extraction
-Finds circles in a grayscale image.
+Finds circles in the grayscale image.
 ```java
 circles = new Mat();
 Imgproc.HoughCircles(chessboardGrey, circles, Imgproc.CV_HOUGH_GRADIENT, 2, chessboardGrey.height() / 4, 50, 30,25, 30);
@@ -211,7 +211,7 @@ for (int i = 0; i < circles.cols(); i++) {
 Detect obejcts based on HSV range values.
 ```java
 chessboardPawns = new Mat();
-Core.inRange(chessboardHSV, lower, upper, chessboardPawns);
+Core.inRange(chessboardHSV, lowerHSV, upperHSV, chessboardPawns);
 ```
 <img src="screenshot/chessboardThr.jpg" width="100"/>
 
@@ -223,6 +223,7 @@ Imgproc.morphologyEx(chessboardPawns, chessboardPawns, Imgproc.MORPH_OPEN, Imgpr
 
 Find the contours of the pawns.
 ```java
+shapes = new ArrayList<MatOfPoint>();
 Imgproc.findContours(chessboardPawns, shapes, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE, new Point(0, 0));
 ```
 
