@@ -164,3 +164,45 @@ Smooth the grayscale image to remove noise
 Imgproc.medianBlur( chessboardGrey ,  chessboardGrey  , 5);
 ```
 <img src="screenshot/chessboardHalfBlur.jpg" width="100"/>
+
+Finds circles in a grayscale image
+```java
+circles = new Mat();
+Imgproc.HoughCircles(chessboardGrey , circles, Imgproc.CV_HOUGH_GRADIENT, 2, chessboardGrey.height() / 4, 50, 30,25, 30);
+```
+
+For each circle, get the center point and radius; starting from the center, extract the color from the HSV space using 8 points (0° ,45° ,90° ,135° ,180° ,225° ,270° ,315° ) on different concentric circumferences. The colors are compared to determine the recognition range [min,max].
+```java
+for (int i = 0; i < circles.cols(); i++) {	
+	data = circles.get(0, i);	
+	cx = Math.round(data[0]);	
+	cy = Math.round(data[1]);	
+	radius = (int) Math.round(data[2]) – 2;
+	
+	for (int r = 0; r < radius * 2 / 3; r += 5) {
+		for (int z = 0; z < 360; z += 45) {
+			rad = Math.toRadians(z);
+			x = cx + Math.cos(rad) * r;
+			y = cy + Math.sin(rad) * r;
+			hsv = chessboardHSV.get((int) y, (int) x);
+			
+			if (hsv == null)
+				continue;
+			
+			for (int j = 0; j < 3; j++) {
+				threshold = j == 0 ? 0 : 5;
+				low = Math.max(hsv[j] - threshold, 0);
+				upper = Math.min(hsv[j] + threshold, j == 0 ? 180 : 225);
+				
+				if (lowerHSV.val[j] > low)
+					lowerHSV.val[j] = low;
+				
+				if (upperHSV.val[j] < upper)
+					upperHSV.val[j] = upper;
+			}
+		}
+	}
+}
+```
+<img src="screenshot/chessboardColor.jpg" width="100"/>
+
