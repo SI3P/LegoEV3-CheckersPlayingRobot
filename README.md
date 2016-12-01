@@ -28,3 +28,47 @@ https://plus.google.com/photos/104626533427419398246/album/6260873768281079857
 
 ### Building Instructions
 https://drive.google.com/open?id=0B9II24hvksAKd0dfSUo4a0lXd2s
+
+
+## Image Processing
+### Capture image
+```java
+Mat mat = new Mat();                      // Image container
+VideoCapture video = new VideoCapture();  //  C++ API
+video.open(0);                            // Open default capturing device
+video.read(mat);                          // Grab next video frame
+video.release();                          // Release resources.
+```
+<img src="screenshot/mat.jpg" width="100"/>
+
+### ChessBoard detection
+
+#### Preprocessing
+Rotate the image by 90 degrees
+```java
+Mat chessboard = new Mat();
+Core.flip(mat.t(), chessboard, 0);
+```
+<img src="screenshot/chessboard.jpg" width="100"/>
+
+Transform the image from BGR to Grayscale format
+```java
+Mat chessboardGrey = new Mat();
+Imgproc.cvtColor(chessboard, chessboardGrey, Imgproc.COLOR_BGRA2GRAY);
+```
+<img src="screenshot/chessboardGrey.jpg" width="100"/>
+
+Smooth the image with Gaussian Filter to remove noise
+```java
+Imgproc.GaussianBlur(chessboardGrey, chessboardGrey, new Size(11, 11), 0);
+```
+<img src="screenshot/chessboardBlur.jpg" width="100"/>
+
+Adaptive (illumination-independent) threshold. We get a binary image with a white grid
+```java
+Mat chessboardBin = new Mat();
+Imgproc.adaptiveThreshold(chessboardGrey, chessboardBin, 255,Imgproc.ADAPTIVE_THRESH_MEAN_C,Imgproc.THRESH_BINARY, 5, 2);
+```
+<img src="screenshot/chessboardBin.jpg" width="100"/>
+
+#### Blob detection
