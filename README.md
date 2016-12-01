@@ -51,20 +51,20 @@ Core.flip(mat.t(), chessboard, 0);
 ```
 <img src="screenshot/chessboard.jpg" width="100"/>
 
-Transform the image from BGR to Grayscale format
+Transform the image from BGR to Grayscale format.
 ```java
 Mat chessboardGrey = new Mat();
 Imgproc.cvtColor(chessboard, chessboardGrey, Imgproc.COLOR_BGRA2GRAY);
 ```
 <img src="screenshot/chessboardGrey.jpg" width="100"/>
 
-Smooth the image with Gaussian Filter to remove noise
+Smooth the image with Gaussian Filter to remove noise.
 ```java
 Imgproc.GaussianBlur(chessboardGrey, chessboardGrey, new Size(11, 11), 0);
 ```
 <img src="screenshot/chessboardBlur.jpg" width="100"/>
 
-Adaptive (illumination-independent) threshold. We get a binary image with a white grid
+Adaptive (illumination-independent) threshold. The result is a binary image with a white grid.
 ```java
 Mat chessboardBin = new Mat();
 Imgproc.adaptiveThreshold(chessboardGrey, chessboardBin, 255,Imgproc.ADAPTIVE_THRESH_MEAN_C,Imgproc.THRESH_BINARY, 5, 2);
