@@ -44,7 +44,7 @@ video.release();                          // Release resources.
 ### ChessBoard detection
 
 #### Preprocessing
-Rotate the image by 90 degrees
+Rotate the image by 90 degrees.
 ```java
 Mat chessboard = new Mat();
 Core.flip(mat.t(), chessboard, 0);
@@ -72,7 +72,7 @@ Imgproc.adaptiveThreshold(chessboardGrey, chessboardBin, 255,Imgproc.ADAPTIVE_TH
 <img src="screenshot/chessboardBin.jpg" width="100"/>
 
 #### Blob detection
-Find all contours in the binary image
+Find all contours in the binary image.
 ```java
 contours = new ArrayList<MatOfPoint>();
 Imgproc.findContours(chessboardBin, contours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
@@ -95,10 +95,43 @@ for (int i = 0; i < contours.size(); i++) {
 <img src="screenshot/chessboardPts.jpg" width="100"/>
 
 #### Image warping
-Sort four points in clockwise order
+Sort four points in clockwise order.
 ```java
 Collections.sort(points, new ClockWiseComparator(points));
 ```
 <img src="screenshot/chessboardSort.png" width="100"/>
 
+Find the longest edge of the chessboard.
+```java
+ptTopLeft = points.get(0);
+ptBottomLeft = points.get(1);
+ptBottomRight = points.get(2);
+ptTopRight = points.get(3);
+maxArea = Math.max(
+		Math.max(
+			Math.pow((ptBottomLeft.x - ptBottomRight.x), 2) + Math.pow((ptBottomLeft.y - ptBottomRight.y), 2),
+			Math.pow((ptTopRight.x - ptBottomRight.x), 2) + Math.pow((ptTopRight.y - ptBottomRight.y), 2)
+			) 
+		,Math.max(
+			Math.pow((ptTopRight.x - ptTopLeft.x), 2) + Math.pow((ptTopRight.y - ptTopLeft.y), 2),
+			Math.pow((ptBottomLeft.x - ptTopLeft.x), 2) + Math.pow((ptBottomLeft.y - ptTopLeft.y), 2)
+			)
+		);
+```
 
+Create a new square image.
+```java
+double side = Math.sqrt((double) maxArea);			// length of the longest edge
+Mat warped = new Mat(new Size(side, side), CvType.CV_8UC1);	// new square image
+```
+
+Correct perspective of the chessboard.
+```java
+destinations = new ArrayList<Point>();
+destinations.add(new Point(0, 0));
+destinations.add(new Point(0, side - 1));
+destinations.add(new Point(side - 1, side - 1));
+destinations.add(new Point(side - 1, 0));
+Imgproc.warpPerspective(chessboard, warped, Imgproc.getPerspectiveTransform(Converters.vector_Point2f_to_Mat(points),Converters.vector_Point2f_to_Mat(destinations)),new Size(side, side));
+```
+<img src="screenshot/chessboardWarp.png" width="100"/>
