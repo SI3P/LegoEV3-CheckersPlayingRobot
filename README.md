@@ -72,3 +72,33 @@ Imgproc.adaptiveThreshold(chessboardGrey, chessboardBin, 255,Imgproc.ADAPTIVE_TH
 <img src="screenshot/chessboardBin.jpg" width="100"/>
 
 #### Blob detection
+Find all contours in the binary image
+```java
+contours = new ArrayList<MatOfPoint>();
+Imgproc.findContours(chessboardBin, contours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+```
+
+Cycles through the contours, converting each one to a polygon. If the polygon has four corners, and is bigger than the previous biggest one, then save the four points.
+```java
+for (int i = 0; i < contours.size(); i++) {
+	contour = contours.get(i);
+	area = Imgproc.contourArea(contour);		
+	approx = new MatOfPoint2f();
+	curve = new MatOfPoint2f(contour.toArray());
+	Imgproc.approxPolyDP(curve, approx, Imgproc.arcLength(curve, true) * 0.02, true);
+	if (approx.total() == 4 && maxim < area) {
+		maxim = area;
+		points = approx.toList();
+	}
+}
+```
+<img src="screenshot/chessboardPts.jpg" width="100"/>
+
+#### Image warping
+Sort four points in clockwise order
+```java
+Collections.sort(points, new ClockWiseComparator(points));
+```
+<img src="screenshot/chessboardSort.png" width="100"/>
+
+
