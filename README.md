@@ -231,8 +231,8 @@ Cycles through the contours, converting each one to a polygon. If the area of th
 ```java
 pawns = new ArrayList<Pawn>();
 size = chessboardPawns.size();
-cellHeight = size.height / 8;
-cellWidth = size.width / 8;
+cellHeight = size.height / GRID_SIZE;
+cellWidth = size.width / GRID_SIZE;
 
 for (MatOfPoint shape : shapes) {
 	area = Imgproc.contourArea(shape, false);
