@@ -14,11 +14,11 @@ The robot consists of four units:
 The movements of the human player are captured by a webcam fixed on one of the free sides, the images are analyzed to detect which pieces have been moved and the result is sent to the draughts engine that will give the next move which will send to the EV3 by bluetooth.
 The whole project is written in Java. The checkers engine implements the MiniMax algorithm with alpha-beta pruning and the quiescent search. The code that analyzes the images makes use of OpenCV library.
 
-### Screenshot
-<img src="screenshot/ev3_checkers_robot.png?raw=true" width="600"/>
-
 ### Video
 https://www.youtube.com/watch?v=rRNOXEZBs28
+
+### Screenshot
+<img src="screenshot/ev3_checkers_robot.png?raw=true" width="600"/>
 
 ### Design
 <img src="screenshot/design.png?raw=true" width="600"/>
