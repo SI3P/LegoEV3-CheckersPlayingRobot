@@ -20,11 +20,11 @@ The whole project is written in Java. The checkers engine implements the MiniMax
 ### Video
 https://www.youtube.com/watch?v=rRNOXEZBs28
 
-### Picture
-<img src="screenshot/robot.jpg" width="100"/>
-
 ### Design
-<img src="screenshot/design.jpg" width="100"/>
+<img src="screenshot/design.jpg" width="500"/>
+
+### Picture
+<img src="screenshot/robot.jpg" width="500"/>
 
 ### Building Instructions
 https://drive.google.com/open?id=0B9II24hvksAKd0dfSUo4a0lXd2s
